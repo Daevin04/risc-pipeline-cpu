@@ -35,63 +35,270 @@ wbdat   WB_write_data — the value being written to the register file this cycl
 
 ---
 
-## Waveform Cross-Reference
+## Waveform Answer Sheet
 
-**How to use:** In Vivado XSIM, use the waveform toolbar's "Go to time" field (or type a time in the Tcl console: `current_time 286ns`). Navigate to the time in the table, then find the matching row in the section below to read the explanation.
+**How to use:** Type the time into Vivado's "Go to time" box. Find the matching card below. Each card lists what every signal in your waveform groups should read at that moment, plus a key result callout explaining what is happening and why.
 
-Simulation time formula: `time (ns) = 26 + (cycle × 10)`
+Time formula: `ns = 26 + (cycle × 10)`
 
-### Key Events — Jump Directly to These Times
+Quick index of times to visit: `46` `76` `86` `96` `126` `156` `236` `286` `296` `306` `406` `846` `856`
 
-| Event | Cycle | Time (ns) | Signals to look at in waveform | What you should see |
-|-------|-------|-----------|-------------------------------|---------------------|
-| Pipeline filling | 0–1 | 26–36 | `IFID_instruction`, `IDEX_opcode` | First instruction (0x40FE ORI) flowing from ID→EX |
-| **ABS instruction + EX/MEM forward** | 2 | 46 | `ForwardA`, `EX_alu_result`, `EXMEM_alu_result` | FA=10, ALU=0x0002, EXMEM carries 0xFFFE |
-| **MIN — both ForwardA and ForwardB active** | 5 | 76 | `ForwardA`, `ForwardB`, `EX_alu_result` | FA=01, FB=10, ALU=0x0005 |
-| **MAX — result** | 6 | 86 | `ForwardB`, `EX_alu_result` | FB=01, ALU=0x000A |
-| **JUMP resolved in ID — PC redirect** | 7 | 96 | `IF_PC`, `IFID_instruction` | PC jumps 0x000E→0x0038; IFID holds delay slot NOP (0x0000) |
-| Forwarding chain (SLL after LI) | 10 | 126 | `ForwardA`, `ForwardB`, `IDEX_opcode` | FA=10, FB=10, SLL computing 4<<4=0x0040 |
-| ADDI chained on SLL result | 13 | 156 | `ForwardA`, `EX_alu_result` | FA=10, ALU=0x1000+16=0x1010 |
-| **Loop starts — BEQ not taken (iter 1)** | 21 | 236 | `MEM_branch_taken`, `EX_alu_result` | Br=0, ALU=0x0005 (R7≠R5) |
-| **Load-use stall fired (iter 1)** | 26 | 286 | `PC_Write_Enable`, `IFID_Write_Enable`, `Control_Flush_Signal` | **0, 0, 1** — all three change simultaneously |
-| Stall cycle — bubble in pipeline | 27 | 296 | `PC_Write_Enable`, `IFID_instruction`, `EXMEM_alu_result` | PC_Write back to 1; IFID still holds SW; EXMEM has LW addr 0x0200 |
-| SW executes with forwarded LW data | 28 | 306 | `ForwardB`, `WB_write_data`, `EXMEM_alu_result` | FB=01, WBdat=0x0101, SW addr=0x0200 |
-| Load-use stall (iter 2) | 38 | 406 | `PC_Write_Enable`, `Control_Flush_Signal` | 0, 1 again |
-| Load-use stall (iter 3) | 50 | 526 | `PC_Write_Enable`, `Control_Flush_Signal` | 0, 1 again |
-| Load-use stall (iter 4) | 62 | 646 | `PC_Write_Enable`, `Control_Flush_Signal` | 0, 1 again |
-| Load-use stall (iter 5) | 74 | 766 | `PC_Write_Enable`, `Control_Flush_Signal` | 0, 1 again |
-| **BEQ taken — loop exits** | 82 | 846 | `MEM_branch_taken`, `IF_PC` | **Br=1**; PC redirected; watch for flush on next cycle |
-| Processor in uninitialized memory | 83+ | 856+ | `IFID_instruction`, `IF_PC` | All 0x0000 — program ran off end due to branch offset bug |
+---
 
-### Recommended Waveform Signal Groups
+### t = 46 ns | Cycle 2 | ABS executes — EX/MEM forwarding active
 
-Add these signals to the waveform viewer in this order for the clearest view:
+> **KEY RESULT: ABS computes |−2| = 0x0002. The input was forwarded directly from the previous instruction's ALU output — the register file was not read.**
 
-```
--- Control flow
-/testbench/PC
-/testbench/uut/dp/IF_PC
-/testbench/uut/dp/IFID_instruction
-/testbench/uut/dp/IDEX_opcode
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `cycle_count` | 2 | |
+| top | `PC` | 0x0006 | Fetching ORI $v3, $zero, 10 next |
+| **group675** | `instruction` | 0x410A | Instruction memory output at 0x0006 |
+| group675 | `IF_PC` | 0x0006 | |
+| group675 | `IFID_instruction` | **0x40C5** | ORI $v2, $zero, 5 — now in decode |
+| **group676** | `ID_opcode` | 4 | ORI being decoded |
+| group676 | `ID_rs` | 0 | $zero |
+| group676 | `ID_rt` | 3 | $v2 = destination |
+| group676 | `ID_immediate` | 5 | immediate = 5 |
+| **group677** | `IDEX_opcode` | **C** | ABS — this is the executing instruction |
+| group677 | `IDEX_read_data1` | 0x0000 | Stale register file value for R3 (not used) |
+| group677 | `alu_control` | ABS op | |
+| group677 | `operand_a` | **0xFFFE** | Forwarded from EX/MEM (ORI result, not register file) |
+| group677 | `operand_b` | 0x0000 | Unused by ABS |
+| group677 | `EX_alu_result` | **0x0002** | \|0xFFFE\| = 2 ✓ |
+| group677 | `EX_write_reg` | R2 | ABS destination = $v1 |
+| group677 | `IDEX_RegWrite` | 1 | Will write result |
+| **group678** | `EXMEM_alu_result` | **0xFFFE** | ORI result being carried through MEM — this is what ForwardA tapped |
+| group678 | `EXMEM_write_reg` | R3 | ORI was writing $v2 |
+| group678 | `EXMEM_RegWrite` | 1 | |
+| group678 | `EXMEM_MemRead` | 0 | No memory load |
+| **group1149** | `EXMEM_Branch` | 0 | |
+| group1149 | `EXMEM_zero_flag` | 0 | |
+| group1149 | `MEM_branch_taken` | 0 | |
 
--- Hazard detection outputs (watch for 0,0,1 pattern)
-/testbench/uut/dp/PC_Write_Enable
-/testbench/uut/dp/IFID_Write_Enable
-/testbench/uut/dp/Control_Flush_Signal
+---
 
--- Forwarding (watch for non-00 values)
-/testbench/uut/dp/ForwardA
-/testbench/uut/dp/ForwardB
+### t = 76 ns | Cycle 5 | MIN executes — ForwardA and ForwardB both active simultaneously
 
--- Execution result
-/testbench/uut/dp/EX_alu_result
-/testbench/uut/dp/MEM_branch_taken
+> **KEY RESULT: MIN computes min(5, 10) = 0x0005. Both ALU inputs were forwarded — R3=5 from WB, R4=10 from MEM — zero register file reads.**
 
--- Register write (watch what gets committed each cycle)
-/testbench/uut/dp/MEMWB_RegWrite
-/testbench/uut/dp/MEMWB_write_reg
-/testbench/uut/dp/WB_write_data
-```
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | 0x000C | Fetching JUMP next |
+| group675 | `IF_PC` | 0x000C | |
+| group675 | `IFID_instruction` | **0xE730** | MAX — now in decode |
+| group676 | `ID_opcode` | E | MAX being decoded |
+| group676 | `ID_rs` | 3 | $v2 |
+| group676 | `ID_rt` | 4 | $v3 |
+| group676 | `ID_rd` | 6 | $a0 = destination |
+| **group677** | `IDEX_opcode` | **D** | MIN — this is the executing instruction |
+| group677 | `operand_a` | **0x0005** | Forwarded from MEM/WB (ORI $v2=5, ForwardA=01) |
+| group677 | `operand_b` | **0x000A** | Forwarded from EX/MEM (ORI $v3=10, ForwardB=10) |
+| group677 | `EX_alu_result` | **0x0005** | min(5, 10) = 5 ✓ |
+| group677 | `EX_write_reg` | R7 | MIN destination = $a1 |
+| group677 | `IDEX_RegWrite` | 1 | |
+| **group678** | `EXMEM_alu_result` | **0x000A** | ORI $v3=10 in MEM — this is what ForwardB tapped |
+| group678 | `EXMEM_write_reg` | R4 | |
+| group678 | `EXMEM_RegWrite` | 1 | |
+| group1149 | `MEM_branch_taken` | 0 | |
+
+---
+
+### t = 86 ns | Cycle 6 | MAX executes + JUMP enters decode
+
+> **KEY RESULT: MAX computes max(5, 10) = 0x000A. Simultaneously, the JUMP instruction is in the decode stage — the processor is already computing the jump target 0x0038.**
+
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | 0x000E | Fetching delay slot NOP |
+| group675 | `IF_PC` | 0x000E | |
+| group675 | `IFID_instruction` | **0xA01C** | JUMP 0x0038 — now in decode |
+| group676 | `ID_opcode` | A | JUMP being decoded |
+| group676 | `ID_immediate` | 0x01C | Jump address field (word 28 = byte 0x0038) |
+| **group677** | `IDEX_opcode` | **E** | MAX — this is the executing instruction |
+| group677 | `operand_a` | 0x0005 | R3=5 from register file (no forward needed) |
+| group677 | `operand_b` | **0x000A** | Forwarded from MEM/WB (ORI $v3=10, ForwardB=01) |
+| group677 | `EX_alu_result` | **0x000A** | max(5, 10) = 10 ✓ |
+| group677 | `EX_write_reg` | R6 | MAX destination = $a0 |
+| **group678** | `EXMEM_alu_result` | 0x0005 | MIN result (= R7) moving through MEM |
+| group678 | `EXMEM_write_reg` | R7 | |
+| group1149 | `MEM_branch_taken` | 0 | |
+
+---
+
+### t = 96 ns | Cycle 7 | Jump redirect — PC jumps to 0x0038
+
+> **KEY RESULT: PC has jumped from 0x000E to 0x0038 in a single cycle. Only the NOP delay slot was consumed. MAX result (0x000A) is moving through the MEM stage on its way to writing R6.**
+
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | **0x0038** | Jumped! Was 0x000E last cycle |
+| group675 | `IF_PC` | **0x0038** | Now fetching init section |
+| group675 | `IFID_instruction` | **0x0000** | NOP delay slot — in decode |
+| group676 | `ID_opcode` | 0 | NOP decoded as ADD R0,R0,R0 |
+| **group677** | `IDEX_opcode` | E | MAX opcode retained (flush zeros control signals only) |
+| group677 | `EX_alu_result` | 0x0005 | Garbage — flush bubble, IDEX_RegWrite=0 so nothing commits |
+| group677 | `IDEX_RegWrite` | **0** | Flushed — no register write despite non-zero opcode |
+| **group678** | `EXMEM_alu_result` | **0x000A** | MAX result moving to WB next cycle — R6 will get 0x000A |
+| group678 | `EXMEM_write_reg` | R6 | |
+| group678 | `EXMEM_RegWrite` | 1 | |
+| group1149 | `MEM_branch_taken` | 0 | |
+
+---
+
+### t = 126 ns | Cycle 10 | SLL $v0 — chained forwarding after LI
+
+> **KEY RESULT: SLL shifts 4 left by 4 bits = 0x0040. The value 4 was forwarded from EX/MEM (LI result one cycle old) — no stall, no NOP.**
+
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | 0x003E | Fetching LI $v1=1 next |
+| group675 | `IFID_instruction` | **0xB481** | LI $v1, 1 — in decode |
+| group676 | `ID_opcode` | B | LI being decoded |
+| **group677** | `IDEX_opcode` | **F** | SLL — this is the executing instruction |
+| group677 | `operand_a` | **0x0004** | Forwarded from EX/MEM (LI $v0=4, ForwardA=10) |
+| group677 | `operand_b` | **0x0004** | Forwarded from EX/MEM same source (ForwardB=10) |
+| group677 | `EX_alu_result` | **0x0040** | 4 << 4 = 64 = 0x40 ✓ |
+| group677 | `EX_write_reg` | R1 | Writing $v0 |
+| **group678** | `EXMEM_alu_result` | **0x0004** | LI result — this is what ForwardA/B tapped |
+| group678 | `EXMEM_write_reg` | R1 | |
+| group678 | `EXMEM_RegWrite` | 1 | |
+
+---
+
+### t = 156 ns | Cycle 13 | ADDI $v1 — three-instruction forwarding chain
+
+> **KEY RESULT: ADDI adds 16 to SLL's result: 0x1000 + 16 = 0x1010. This is the third instruction in a chain — LI→SLL→ADDI — all handled by forwarding with zero NOPs.**
+
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | 0x0044 | Fetching LI $v2=15 next |
+| group675 | `IFID_instruction` | **0xB6CF** | LI $v2, 15 — in decode |
+| **group677** | `IDEX_opcode` | **2** | ADDI — this is the executing instruction |
+| group677 | `operand_a` | **0x1000** | Forwarded from EX/MEM (SLL result, ForwardA=10) |
+| group677 | `operand_b` | **0x0010** | Immediate = 16 (from sign extension) |
+| group677 | `EX_alu_result` | **0x1010** | 0x1000 + 16 = 0x1010 ✓ |
+| group677 | `EX_write_reg` | R2 | Writing $v1 |
+| **group678** | `EXMEM_alu_result` | **0x1000** | SLL result — what ForwardA tapped |
+| group678 | `EXMEM_write_reg` | R2 | |
+
+---
+
+### t = 236 ns | Cycle 21 | BEQ — not taken (loop counter = 5, not 0)
+
+> **KEY RESULT: BEQ compares R7=5 vs R5=0. They are not equal, so branch is not taken. Loop body executes. ForwardA and ForwardB active — neither value was committed to register file yet.**
+
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | 0x0054 | Fetching NOP delay slot 1 |
+| group675 | `IFID_instruction` | 0x0000 | NOP delay slot 1 — in decode |
+| **group677** | `IDEX_opcode` | **8** | BEQ — this is the executing instruction |
+| group677 | `operand_a` | **0x0005** | R7=5 forwarded from MEM/WB (LI $a1=5, ForwardA=01) |
+| group677 | `operand_b` | **0x0000** | R5=0 forwarded from EX/MEM (SUB result, ForwardB=10) |
+| group677 | `EX_alu_result` | **0x0005** | R7 − R5 = 5 − 0 = 5, not zero |
+| **group678** | `EXMEM_alu_result` | 0x0000 | SUB R5=0 in MEM — what ForwardB tapped |
+| **group1149** | `EXMEM_Branch` | 1 | BEQ control signal is set |
+| group1149 | `EXMEM_zero_flag` | **0** | Not zero → branch condition false |
+| group1149 | `MEM_branch_taken` | **0** | Branch NOT taken ✓ |
+
+---
+
+### t = 286 ns | Cycle 26 | Load-use stall fires — LW in EX, SW in decode
+
+> **KEY RESULT: Hazard detection freezes the PC and IF/ID register and inserts a bubble into ID/EX. LW is computing the load address 0x0200. SW is frozen in decode waiting for the load result. No explicit NOP was written.**
+
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | **0x005E** | FROZEN — same as last cycle, will not advance |
+| group675 | `IF_PC` | **0x005E** | Frozen |
+| group675 | `IFID_instruction` | **0x6D40** | SW — frozen in decode, waiting for LW |
+| group676 | `ID_opcode` | 6 | SW being decoded |
+| group676 | `ID_rs` | 6 | $a0 = base address register |
+| group676 | `ID_rt` | 5 | $t0 = data register (this is R5 = LW destination → hazard!) |
+| **group677** | `IDEX_opcode` | **5** | LW — this is the executing instruction |
+| group677 | `operand_a` | 0x0200 | R6=$a0 (base address) |
+| group677 | `operand_b` | 0x0000 | Offset = 0 |
+| group677 | `EX_alu_result` | **0x0200** | Load address = R6 + 0 = 0x0200 ✓ |
+| group677 | `IDEX_RegWrite` | 1 | LW will write R5 |
+| **group678** | `EXMEM_alu_result` | 0x0004 | SUBI result (R7=4) still moving through |
+| group678 | `EXMEM_write_reg` | R7 | |
+| group1149 | `MEM_branch_taken` | 0 | |
+
+> **At this exact moment in the waveform, watch: PC does not change on the NEXT rising edge. IFID_instruction does not change. A bubble appears in group677 signals at t=296ns.**
+
+---
+
+### t = 296 ns | Cycle 27 | Stall cycle — bubble in EX, LW in MEM
+
+> **KEY RESULT: The stall has taken effect. A bubble occupies EX. LW is now in the MEM stage reading address 0x0200 from data memory. The value 0x0101 is being loaded. SW is still frozen in decode.**
+
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | **0x005E** | Still frozen from last cycle |
+| group675 | `IF_PC` | **0x005E** | Still frozen |
+| group675 | `IFID_instruction` | **0x6D40** | SW still frozen in decode |
+| **group677** | `IDEX_opcode` | 5 | Opcode field retained, but control signals zeroed |
+| group677 | `IDEX_RegWrite` | **0** | Bubble — no register write despite opcode showing LW |
+| group677 | `EX_alu_result` | 0x0400 | Garbage computation from bubble — harmless |
+| **group678** | `EXMEM_alu_result` | **0x0200** | LW load address — memory is reading from here right now |
+| group678 | `EXMEM_MemRead` | **1** | Memory read in progress |
+| group678 | `EXMEM_write_reg` | R5 | LW will write $t0 |
+| group1149 | `MEM_branch_taken` | 0 | |
+
+---
+
+### t = 306 ns | Cycle 28 | SW executes — forwarded LW data used as store value
+
+> **KEY RESULT: SW stores 0x0101 to address 0x0200. The value 0x0101 came from LW two cycles ago and is forwarded via MEM/WB — the register file (R5) was never read. This is the forwarding unit resolving the hazard that the stall began.**
+
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | 0x0060 | Back to normal — ADDI $a0 fetching |
+| group675 | `IFID_instruction` | **0x2D82** | ADDI $a0, $a0, 2 — in decode |
+| **group677** | `IDEX_opcode` | **6** | SW — this is the executing instruction |
+| group677 | `operand_a` | **0x0200** | R6=$a0 = store address base |
+| group677 | `operand_b` | **0x0101** | ForwardB=01 → from MEM/WB (LW loaded 0x0101 from Mem[0x0200]) |
+| group677 | `EX_alu_result` | **0x0200** | Store address = R6 + 0 = 0x0200 ✓ |
+| group677 | `IDEX_RegWrite` | **0** | SW does not write register |
+| **group678** | `EXMEM_alu_result` | 0x0400 | Bubble garbage — ignore (EXMEM_RegWrite=0) |
+| group678 | `EXMEM_RegWrite` | 0 | |
+| group1149 | `MEM_branch_taken` | 0 | |
+
+> **In WB this cycle:** `WB_write_data = 0x0101`, `MEMWB_RegWrite = 1` — LW result is being committed to R5 right now.
+
+---
+
+### t = 406 / 526 / 646 / 766 ns | Cycles 38 / 50 / 62 / 74 | Load-use stall — iterations 2–5
+
+> **KEY RESULT: Same stall pattern repeats once per loop iteration. LW address increments by 2 each time as R6=$a0 advances.**
+
+| Iteration | Stall cycle | Time | LW address | Mem value loaded |
+|-----------|-------------|------|-----------|-----------------|
+| 2 | 38 | 406 ns | 0x0202 | 0x0110 |
+| 3 | 50 | 526 ns | 0x0204 | 0x0011 |
+| 4 | 62 | 646 ns | 0x0206 | 0x00F0 |
+| 5 | 74 | 766 ns | 0x0208 | 0x00FF |
+
+At each stall cycle: `PC` frozen, `IFID_instruction = 0x6D40` (SW), `EX_alu_result` = load address, `EXMEM_MemRead = 1`.
+
+---
+
+### t = 846 ns | Cycle 82 | BEQ taken — loop counter reached zero
+
+> **KEY RESULT: R7=0 and R5=0, so BEQ condition is true. MEM_branch_taken fires. This is the only cycle in the entire simulation where MEM_branch_taken = 1.**
+
+| Group | Signal | Value | What it means |
+|-------|--------|-------|---------------|
+| top | `PC` | 0x0056 | Mid-branch — delay slots |
+| group675 | `IFID_instruction` | 0x0000 | NOP delay slot in decode |
+| **group677** | `IDEX_opcode` | 0 | NOP/bubble in EX |
+| group677 | `EX_alu_result` | 0x0000 | |
+| **group678** | `EXMEM_alu_result` | 0x0000 | BEQ comparison result — zero! |
+| **group1149** | `EXMEM_Branch` | **1** | BEQ control signal set |
+| group1149 | `EXMEM_zero_flag` | **1** | R7 − R5 = 0 → branch condition true |
+| group1149 | `MEM_branch_taken` | **1** | BRANCH TAKEN — watch PC change on next cycle |
+
+> **At t = 856 ns (next cycle):** `IF_PC` jumps to **0x0088** (not 0x0080 — branch offset bug in test program). PC will keep incrementing through uninitialized memory (all 0x0000) from here on.
 
 ---
 
