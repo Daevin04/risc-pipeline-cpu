@@ -6,7 +6,7 @@ A complete 5-stage pipelined processor implemented in VHDL, synthesized and impl
 
 <img width="2500" height="779" alt="Waveform" src="https://github.com/user-attachments/assets/65bd5eff-981b-4c62-a842-317b9033a2d8" />
 
-Waveform Results: docs/Waveform.pdf, docs/simulation_trace.md
+Waveform Results: [Waveform.pdf](https://github.com/user-attachments/files/25846550/Waveform.pdf), docs/simulation_trace.md
 
 ---
 
