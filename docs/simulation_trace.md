@@ -35,6 +35,66 @@ wbdat   WB_write_data — the value being written to the register file this cycl
 
 ---
 
+## Waveform Cross-Reference
+
+**How to use:** In Vivado XSIM, use the waveform toolbar's "Go to time" field (or type a time in the Tcl console: `current_time 286ns`). Navigate to the time in the table, then find the matching row in the section below to read the explanation.
+
+Simulation time formula: `time (ns) = 26 + (cycle × 10)`
+
+### Key Events — Jump Directly to These Times
+
+| Event | Cycle | Time (ns) | Signals to look at in waveform | What you should see |
+|-------|-------|-----------|-------------------------------|---------------------|
+| Pipeline filling | 0–1 | 26–36 | `IFID_instruction`, `IDEX_opcode` | First instruction (0x40FE ORI) flowing from ID→EX |
+| **ABS instruction + EX/MEM forward** | 2 | 46 | `ForwardA`, `EX_alu_result`, `EXMEM_alu_result` | FA=10, ALU=0x0002, EXMEM carries 0xFFFE |
+| **MIN — both ForwardA and ForwardB active** | 5 | 76 | `ForwardA`, `ForwardB`, `EX_alu_result` | FA=01, FB=10, ALU=0x0005 |
+| **MAX — result** | 6 | 86 | `ForwardB`, `EX_alu_result` | FB=01, ALU=0x000A |
+| **JUMP resolved in ID — PC redirect** | 7 | 96 | `IF_PC`, `IFID_instruction` | PC jumps 0x000E→0x0038; IFID holds delay slot NOP (0x0000) |
+| Forwarding chain (SLL after LI) | 10 | 126 | `ForwardA`, `ForwardB`, `IDEX_opcode` | FA=10, FB=10, SLL computing 4<<4=0x0040 |
+| ADDI chained on SLL result | 13 | 156 | `ForwardA`, `EX_alu_result` | FA=10, ALU=0x1000+16=0x1010 |
+| **Loop starts — BEQ not taken (iter 1)** | 21 | 236 | `MEM_branch_taken`, `EX_alu_result` | Br=0, ALU=0x0005 (R7≠R5) |
+| **Load-use stall fired (iter 1)** | 26 | 286 | `PC_Write_Enable`, `IFID_Write_Enable`, `Control_Flush_Signal` | **0, 0, 1** — all three change simultaneously |
+| Stall cycle — bubble in pipeline | 27 | 296 | `PC_Write_Enable`, `IFID_instruction`, `EXMEM_alu_result` | PC_Write back to 1; IFID still holds SW; EXMEM has LW addr 0x0200 |
+| SW executes with forwarded LW data | 28 | 306 | `ForwardB`, `WB_write_data`, `EXMEM_alu_result` | FB=01, WBdat=0x0101, SW addr=0x0200 |
+| Load-use stall (iter 2) | 38 | 406 | `PC_Write_Enable`, `Control_Flush_Signal` | 0, 1 again |
+| Load-use stall (iter 3) | 50 | 526 | `PC_Write_Enable`, `Control_Flush_Signal` | 0, 1 again |
+| Load-use stall (iter 4) | 62 | 646 | `PC_Write_Enable`, `Control_Flush_Signal` | 0, 1 again |
+| Load-use stall (iter 5) | 74 | 766 | `PC_Write_Enable`, `Control_Flush_Signal` | 0, 1 again |
+| **BEQ taken — loop exits** | 82 | 846 | `MEM_branch_taken`, `IF_PC` | **Br=1**; PC redirected; watch for flush on next cycle |
+| Processor in uninitialized memory | 83+ | 856+ | `IFID_instruction`, `IF_PC` | All 0x0000 — program ran off end due to branch offset bug |
+
+### Recommended Waveform Signal Groups
+
+Add these signals to the waveform viewer in this order for the clearest view:
+
+```
+-- Control flow
+/testbench/PC
+/testbench/uut/dp/IF_PC
+/testbench/uut/dp/IFID_instruction
+/testbench/uut/dp/IDEX_opcode
+
+-- Hazard detection outputs (watch for 0,0,1 pattern)
+/testbench/uut/dp/PC_Write_Enable
+/testbench/uut/dp/IFID_Write_Enable
+/testbench/uut/dp/Control_Flush_Signal
+
+-- Forwarding (watch for non-00 values)
+/testbench/uut/dp/ForwardA
+/testbench/uut/dp/ForwardB
+
+-- Execution result
+/testbench/uut/dp/EX_alu_result
+/testbench/uut/dp/MEM_branch_taken
+
+-- Register write (watch what gets committed each cycle)
+/testbench/uut/dp/MEMWB_RegWrite
+/testbench/uut/dp/MEMWB_write_reg
+/testbench/uut/dp/WB_write_data
+```
+
+---
+
 ## Section 1 — BONUS Custom Instructions (Cycles 0–6)
 
 Tests the three custom ALU extensions: ABS, MIN, MAX.
