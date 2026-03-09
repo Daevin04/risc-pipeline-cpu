@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="testbench_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="processor_pkg" />
+            <top_module name="testbench" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="1,156.700 ns"></ZoomStartTime>
+      <ZoomEndTime time="1,284.501 ns"></ZoomEndTime>
+      <Cursor1Time time="684.900 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="276"></NameColumnWidth>
+      <ValueColumnWidth column_width="116"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="14" />
+   <wvobject fp_name="/testbench/sim_done" type="other">
+      <obj_property name="ElementShortName">sim_done</obj_property>
+      <obj_property name="ObjectShortName">sim_done</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/reset" type="logic">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/cycle_count" type="other">
+      <obj_property name="ElementShortName">cycle_count</obj_property>
+      <obj_property name="ObjectShortName">cycle_count</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/PC" type="array">
+      <obj_property name="ElementShortName">PC[15:0]</obj_property>
+      <obj_property name="ObjectShortName">PC[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="group675" type="group">
+      <obj_property name="label">Instruction Fetch</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/testbench/uut/instruction" type="array">
+         <obj_property name="ElementShortName">instruction[15:0]</obj_property>
+         <obj_property name="ObjectShortName">instruction[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/IF_PC" type="array">
+         <obj_property name="ElementShortName">IF_PC[15:0]</obj_property>
+         <obj_property name="ObjectShortName">IF_PC[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/IFID_PC" type="array">
+         <obj_property name="ElementShortName">IFID_PC[15:0]</obj_property>
+         <obj_property name="ObjectShortName">IFID_PC[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/IFID_instruction" type="array">
+         <obj_property name="ElementShortName">IFID_instruction[15:0]</obj_property>
+         <obj_property name="ObjectShortName">IFID_instruction[15:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group676" type="group">
+      <obj_property name="label"> Instruction Decode</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/testbench/uut/dp/ID_opcode" type="array">
+         <obj_property name="ElementShortName">ID_opcode[3:0]</obj_property>
+         <obj_property name="ObjectShortName">ID_opcode[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/ID_rs" type="array">
+         <obj_property name="ElementShortName">ID_rs[2:0]</obj_property>
+         <obj_property name="ObjectShortName">ID_rs[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/ID_rt" type="array">
+         <obj_property name="ElementShortName">ID_rt[2:0]</obj_property>
+         <obj_property name="ObjectShortName">ID_rt[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/ID_rd" type="array">
+         <obj_property name="ElementShortName">ID_rd[2:0]</obj_property>
+         <obj_property name="ObjectShortName">ID_rd[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/ID_immediate" type="array">
+         <obj_property name="ElementShortName">ID_immediate[5:0]</obj_property>
+         <obj_property name="ObjectShortName">ID_immediate[5:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/ID_sign_extended" type="array">
+         <obj_property name="ElementShortName">ID_sign_extended[15:0]</obj_property>
+         <obj_property name="ObjectShortName">ID_sign_extended[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/ID_reg_read_data1" type="array">
+         <obj_property name="ElementShortName">ID_reg_read_data1[15:0]</obj_property>
+         <obj_property name="ObjectShortName">ID_reg_read_data1[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/ID_reg_read_data2" type="array">
+         <obj_property name="ElementShortName">ID_reg_read_data2[15:0]</obj_property>
+         <obj_property name="ObjectShortName">ID_reg_read_data2[15:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group677" type="group">
+      <obj_property name="label">Execute</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/testbench/uut/dp/IDEX_opcode" type="array">
+         <obj_property name="ElementShortName">IDEX_opcode[3:0]</obj_property>
+         <obj_property name="ObjectShortName">IDEX_opcode[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/IDEX_read_data1" type="array">
+         <obj_property name="ElementShortName">IDEX_read_data1[15:0]</obj_property>
+         <obj_property name="ObjectShortName">IDEX_read_data1[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/IDEX_read_data2" type="array">
+         <obj_property name="ElementShortName">IDEX_read_data2[15:0]</obj_property>
+         <obj_property name="ObjectShortName">IDEX_read_data2[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/alu_ctrl/alu_control" type="array">
+         <obj_property name="ElementShortName">alu_control[3:0]</obj_property>
+         <obj_property name="ObjectShortName">alu_control[3:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/alu_unit/operand_a" type="array">
+         <obj_property name="ElementShortName">operand_a[15:0]</obj_property>
+         <obj_property name="ObjectShortName">operand_a[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/alu_unit/operand_b" type="array">
+         <obj_property name="ElementShortName">operand_b[15:0]</obj_property>
+         <obj_property name="ObjectShortName">operand_b[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/EX_alu_result" type="array">
+         <obj_property name="ElementShortName">EX_alu_result[15:0]</obj_property>
+         <obj_property name="ObjectShortName">EX_alu_result[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/EX_write_reg" type="array">
+         <obj_property name="ElementShortName">EX_write_reg[2:0]</obj_property>
+         <obj_property name="ObjectShortName">EX_write_reg[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/IDEX_RegWrite" type="logic">
+         <obj_property name="ElementShortName">IDEX_RegWrite</obj_property>
+         <obj_property name="ObjectShortName">IDEX_RegWrite</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group678" type="group">
+      <obj_property name="label"> Memory Stage</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/testbench/uut/dp/EXMEM_alu_result" type="array">
+         <obj_property name="ElementShortName">EXMEM_alu_result[15:0]</obj_property>
+         <obj_property name="ObjectShortName">EXMEM_alu_result[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/EXMEM_write_reg" type="array">
+         <obj_property name="ElementShortName">EXMEM_write_reg[2:0]</obj_property>
+         <obj_property name="ObjectShortName">EXMEM_write_reg[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/EXMEM_RegWrite" type="logic">
+         <obj_property name="ElementShortName">EXMEM_RegWrite</obj_property>
+         <obj_property name="ObjectShortName">EXMEM_RegWrite</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/EXMEM_MemRead" type="logic">
+         <obj_property name="ElementShortName">EXMEM_MemRead</obj_property>
+         <obj_property name="ObjectShortName">EXMEM_MemRead</obj_property>
+      </wvobject>
+      <wvobject fp_name="group1149" type="group">
+         <obj_property name="label">Branch Decision</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
+         <wvobject fp_name="/testbench/uut/dp/EXMEM_Branch" type="logic">
+            <obj_property name="ElementShortName">EXMEM_Branch</obj_property>
+            <obj_property name="ObjectShortName">EXMEM_Branch</obj_property>
+         </wvobject>
+         <wvobject fp_name="/testbench/uut/dp/EXMEM_zero_flag" type="logic">
+            <obj_property name="ElementShortName">EXMEM_zero_flag</obj_property>
+            <obj_property name="ObjectShortName">EXMEM_zero_flag</obj_property>
+         </wvobject>
+         <wvobject fp_name="/testbench/uut/dp/MEM_branch_taken" type="logic">
+            <obj_property name="ElementShortName">MEM_branch_taken</obj_property>
+            <obj_property name="ObjectShortName">MEM_branch_taken</obj_property>
+         </wvobject>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group679" type="group">
+      <obj_property name="label"> Write Back</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/testbench/uut/dp/MEMWB_alu_result" type="array">
+         <obj_property name="ElementShortName">MEMWB_alu_result[15:0]</obj_property>
+         <obj_property name="ObjectShortName">MEMWB_alu_result[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/MEMWB_write_reg" type="array">
+         <obj_property name="ElementShortName">MEMWB_write_reg[2:0]</obj_property>
+         <obj_property name="ObjectShortName">MEMWB_write_reg[2:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/MEMWB_RegWrite" type="logic">
+         <obj_property name="ElementShortName">MEMWB_RegWrite</obj_property>
+         <obj_property name="ObjectShortName">MEMWB_RegWrite</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/WB_write_data" type="array">
+         <obj_property name="ElementShortName">WB_write_data[15:0]</obj_property>
+         <obj_property name="ObjectShortName">WB_write_data[15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/write_enable" type="logic">
+         <obj_property name="ElementShortName">write_enable</obj_property>
+         <obj_property name="ObjectShortName">write_enable</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/testbench/uut/dp/reg_file/registers" type="array">
+      <obj_property name="ElementShortName">registers[0:7][15:0]</obj_property>
+      <obj_property name="ObjectShortName">registers[0:7][15:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[0]" type="array">
+         <obj_property name="ElementShortName">[0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[1]" type="array">
+         <obj_property name="ElementShortName">[1][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[1][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[2]" type="array">
+         <obj_property name="ElementShortName">[2][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[2][15:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[3]" type="array">
+         <obj_property name="ElementShortName">[3][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[3][15:0]</obj_property>
+         <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[4]" type="array">
+         <obj_property name="ElementShortName">[4][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[4][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[5]" type="array">
+         <obj_property name="ElementShortName">[5][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[5][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[6]" type="array">
+         <obj_property name="ElementShortName">[6][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[6][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[7]" type="array">
+         <obj_property name="ElementShortName">[7][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[7][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[0]" type="array">
+         <obj_property name="ElementShortName">[0][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[0][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[1]" type="array">
+         <obj_property name="ElementShortName">[1][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[1][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[2]" type="array">
+         <obj_property name="ElementShortName">[2][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[2][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[3]" type="array">
+         <obj_property name="ElementShortName">[3][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[3][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[4]" type="array">
+         <obj_property name="ElementShortName">[4][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[4][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[5]" type="array">
+         <obj_property name="ElementShortName">[5][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[5][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[6]" type="array">
+         <obj_property name="ElementShortName">[6][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[6][15:0]</obj_property>
+      </wvobject>
+      <wvobject fp_name="/testbench/uut/dp/reg_file/registers[7]" type="array">
+         <obj_property name="ElementShortName">[7][15:0]</obj_property>
+         <obj_property name="ObjectShortName">[7][15:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/testbench/uut/dp/reg_file/write_addr" type="array">
+      <obj_property name="ElementShortName">write_addr[2:0]</obj_property>
+      <obj_property name="ObjectShortName">write_addr[2:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/uut/dp/reg_file/write_data" type="array">
+      <obj_property name="ElementShortName">write_data[15:0]</obj_property>
+      <obj_property name="ObjectShortName">write_data[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/uut/instr_mem/mem" type="array">
+      <obj_property name="ElementShortName">mem[0:511][15:0]</obj_property>
+      <obj_property name="ObjectShortName">mem[0:511][15:0]</obj_property>
+   </wvobject>
+</wave_config>

@@ -1,0 +1,275 @@
+================================================================================
+              PIPELINED PROCESSOR TEST PROGRAM
+           WITH SOFTWARE-INSERTED NOPs FOR HAZARDS
+                    BONUS #5: +40%
+================================================================================
+
+UNDERSTANDING HAZARDS IN PIPELINING
+================================================================================
+
+When instruction B needs a result from instruction A:
+- Instruction A writes register in cycle 5 (WB stage)
+- Instruction B reads register in cycle 2 (ID stage)
+- If they're back-to-back, B reads BEFORE A writes!
+
+SOLUTION: Insert NOPs (No Operation) to delay instruction B
+
+NOP INSTRUCTION: add $zero, $zero, $zero
+Machine Code: 0x0000
+(Writes 0 to $zero, which stays 0 - no effect!)
+
+================================================================================
+ORIGINAL TEST PROGRAM (WITHOUT NOPs) - WOULD FAIL!
+================================================================================
+
+# This BREAKS because of data hazards:
+
+ori $v0, $zero, 0x40      # $v0 = 0x40
+ori $v1, $zero, 0x10      # $v1 = 0x10
+add $t0, $v0, $v1         # HAZARD! Needs $v0, $v1 (not ready yet!)
+sw $t0, 0x20($zero)       # HAZARD! Needs $t0 (not ready yet!)
+
+================================================================================
+CORRECTED TEST PROGRAM (WITH NOPs) - WORKS!
+================================================================================
+
+Assembly Code with NOPs:
+--------------------------------------------------------------------------------
+
+# Part 1: Initialize registers
+ori $v0, $zero, 0x40      # Addr 0x00: $v0 = 0x40
+nop                       # Addr 0x02: Wait 1 cycle
+nop                       # Addr 0x04: Wait 2 cycles
+ori $v1, $zero, 0x10      # Addr 0x06: $v1 = 0x10  (now $v0 is ready)
+nop                       # Addr 0x08: Wait 1 cycle
+nop                       # Addr 0x0A: Wait 2 cycles
+
+# Part 2: Test custom ABS instruction
+li $v2, 0x3F              # Addr 0x0C: $v2 = -1 (0x3F = 63, use as negative)
+nop                       # Addr 0x0E: Wait
+nop                       # Addr 0x10: Wait
+abs $t0, $v2              # Addr 0x12: $t0 = |$v2| (CUSTOM INSTRUCTION!)
+nop                       # Addr 0x14: Wait for $t0
+nop                       # Addr 0x16: Wait for $t0
+
+# Part 3: Test custom MIN instruction  
+ori $v2, $zero, 0x05      # Addr 0x18: $v2 = 5
+nop                       # Addr 0x1A: Wait
+nop                       # Addr 0x1C: Wait
+ori $v3, $zero, 0x0A      # Addr 0x1E: $v3 = 10
+nop                       # Addr 0x20: Wait
+nop                       # Addr 0x22: Wait
+min $a1, $v2, $v3         # Addr 0x24: $a1 = min(5, 10) = 5 (CUSTOM!)
+nop                       # Addr 0x26: Wait for $a1
+nop                       # Addr 0x28: Wait for $a1
+
+# Part 4: Test custom MAX instruction
+max $a0, $v2, $v3         # Addr 0x2A: $a0 = max(5, 10) = 10 (CUSTOM!)
+nop                       # Addr 0x2C: Wait for $a0
+nop                       # Addr 0x2E: Wait for $a0
+
+# Part 5: Store results
+sw $t0, 0x20($zero)       # Addr 0x30: Store ABS result
+nop                       # Addr 0x32: (sw doesn't need NOPs after)
+sw $a1, 0x22($zero)       # Addr 0x34: Store MIN result
+nop                       # Addr 0x36:
+sw $a0, 0x24($zero)       # Addr 0x38: Store MAX result
+
+# Part 6: Loop test with NOPs
+ori $a0, $zero, 0x10      # Addr 0x3A: $a0 = 0x10 (base address)
+nop                       # Addr 0x3C
+nop                       # Addr 0x3E
+ori $a1, $zero, 0x05      # Addr 0x40: $a1 = 5 (loop counter)
+nop                       # Addr 0x42
+nop                       # Addr 0x44
+
+loop_start:
+beq $a1, $zero, loop_end  # Addr 0x46: if ($a1 == 0) exit loop
+nop                       # Addr 0x48: Branch delay slot (NOP 1)
+nop                       # Addr 0x4A: Branch delay slot (NOP 2)
+
+subi $a1, $a1, 0x01       # Addr 0x4C: $a1--
+nop                       # Addr 0x4E: Wait
+nop                       # Addr 0x50: Wait
+
+lw $t0, 0($a0)            # Addr 0x52: Load from memory
+nop                       # Addr 0x54: LW needs only 1 NOP
+add $t0, $t0, $v0         # Addr 0x56: Use loaded value
+nop                       # Addr 0x58: Wait
+nop                       # Addr 0x5A: Wait
+
+sw $t0, 0($a0)            # Addr 0x5C: Store back
+nop                       # Addr 0x5E:
+addi $a0, $a0, 0x02       # Addr 0x60: Next address
+nop                       # Addr 0x62: Wait
+nop                       # Addr 0x64: Wait
+
+j loop_start              # Addr 0x66: Jump to loop start
+nop                       # Addr 0x68: Jump delay slot
+nop                       # Addr 0x6A: Jump delay slot
+
+loop_end:
+j loop_end                # Addr 0x6C: Infinite loop (halt)
+nop                       # Addr 0x6E:
+nop                       # Addr 0x70:
+
+================================================================================
+MACHINE CODE (HEX) - FOR memory.vhd INITIALIZATION
+================================================================================
+
+-- Address : Machine Code : Assembly
+mem(0)   <= x"4140";  -- 0x00: ori $v0, $zero, 0x40
+mem(1)   <= x"0000";  -- 0x02: nop
+mem(2)   <= x"0000";  -- 0x04: nop
+mem(3)   <= x"4210";  -- 0x06: ori $v1, $zero, 0x10
+mem(4)   <= x"0000";  -- 0x08: nop
+mem(5)   <= x"0000";  -- 0x0A: nop
+
+mem(6)   <= x"B33F";  -- 0x0C: li $v2, 0x3F
+mem(7)   <= x"0000";  -- 0x0E: nop
+mem(8)   <= x"0000";  -- 0x10: nop
+mem(9)   <= x"C580";  -- 0x12: abs $t0, $v2 (CUSTOM!)
+mem(10)  <= x"0000";  -- 0x14: nop
+mem(11)  <= x"0000";  -- 0x16: nop
+
+mem(12)  <= x"4305";  -- 0x18: ori $v2, $zero, 0x05
+mem(13)  <= x"0000";  -- 0x1A: nop
+mem(14)  <= x"0000";  -- 0x1C: nop
+mem(15)  <= x"440A";  -- 0x1E: ori $v3, $zero, 0x0A
+mem(16)  <= x"0000";  -- 0x20: nop
+mem(17)  <= x"0000";  -- 0x22: nop
+mem(18)  <= x"D7E0";  -- 0x24: min $a1, $v2, $v3 (CUSTOM!)
+mem(19)  <= x"0000";  -- 0x26: nop
+mem(20)  <= x"0000";  -- 0x28: nop
+
+mem(21)  <= x"E7C0";  -- 0x2A: max $a0, $v2, $v3 (CUSTOM!)
+mem(22)  <= x"0000";  -- 0x2C: nop
+mem(23)  <= x"0000";  -- 0x2E: nop
+
+mem(24)  <= x"6D20";  -- 0x30: sw $t0, 0x20($zero)
+mem(25)  <= x"0000";  -- 0x32: nop
+mem(26)  <= x"6F22";  -- 0x34: sw $a1, 0x22($zero)
+mem(27)  <= x"0000";  -- 0x36: nop
+mem(28)  <= x"6E24";  -- 0x38: sw $a0, 0x24($zero)
+
+mem(29)  <= x"4610";  -- 0x3A: ori $a0, $zero, 0x10
+mem(30)  <= x"0000";  -- 0x3C: nop
+mem(31)  <= x"0000";  -- 0x3E: nop
+mem(32)  <= x"4705";  -- 0x40: ori $a1, $zero, 0x05
+mem(33)  <= x"0000";  -- 0x42: nop
+mem(34)  <= x"0000";  -- 0x44: nop
+
+mem(35)  <= x"8E0D";  -- 0x46: beq $a1, $zero, 13 (to 0x6C)
+mem(36)  <= x"0000";  -- 0x48: nop (branch delay)
+mem(37)  <= x"0000";  -- 0x4A: nop (branch delay)
+
+mem(38)  <= x"3F81";  -- 0x4C: subi $a1, $a1, 0x01
+mem(39)  <= x"0000";  -- 0x4E: nop
+mem(40)  <= x"0000";  -- 0x50: nop
+
+mem(41)  <= x"5D40";  -- 0x52: lw $t0, 0($a0)
+mem(42)  <= x"0000";  -- 0x54: nop (lw needs 1)
+mem(43)  <= x"02A8";  -- 0x56: add $t0, $t0, $v0
+mem(44)  <= x"0000";  -- 0x58: nop
+mem(45)  <= x"0000";  -- 0x5A: nop
+
+mem(46)  <= x"6D40";  -- 0x5C: sw $t0, 0($a0)
+mem(47)  <= x"0000";  -- 0x5E: nop
+mem(48)  <= x"2D82";  -- 0x60: addi $a0, $a0, 0x02
+mem(49)  <= x"0000";  -- 0x62: nop
+mem(50)  <= x"0000";  -- 0x64: nop
+
+mem(51)  <= x"A023";  -- 0x66: j 0x0046 (loop_start)
+mem(52)  <= x"0000";  -- 0x68: nop (jump delay)
+mem(53)  <= x"0000";  -- 0x6A: nop (jump delay)
+
+mem(54)  <= x"A036";  -- 0x6C: j 0x006C (loop_end)
+mem(55)  <= x"0000";  -- 0x6E: nop
+mem(56)  <= x"0000";  -- 0x70: nop
+
+-- Initialize test data in memory
+mem(8)   <= x"0101";  -- Data at 0x10
+mem(9)   <= x"0110";  -- Data at 0x12
+mem(10)  <= x"0011";  -- Data at 0x14
+mem(11)  <= x"00F0";  -- Data at 0x16
+mem(12)  <= x"00FF";  -- Data at 0x18
+
+================================================================================
+EXPECTED RESULTS
+================================================================================
+
+After execution (with pipelining working correctly):
+
+REGISTERS:
+$v0 = 0x0040 (64)
+$v1 = 0x0010 (16)
+$v2 = 0x0005 (5)
+$v3 = 0x000A (10)
+$t0 = 0x003F (63) - result of ABS(-1)
+$a0 = 0x001A (after 5 loop iterations)
+$a1 = 0x0000 (loop counter exhausted)
+
+MEMORY:
+Mem[0x20] = 0x003F  # ABS result
+Mem[0x22] = 0x0005  # MIN(5, 10) = 5
+Mem[0x24] = 0x000A  # MAX(5, 10) = 10
+Mem[0x10] = 0x0141  # Original 0x0101 + 0x40
+Mem[0x12] = 0x0150  # Original 0x0110 + 0x40
+... etc
+
+================================================================================
+NOP RULES SUMMARY
+================================================================================
+
+1. After R-type/I-type that writes register:
+   ? Insert 2 NOPs before using that register
+
+2. After load (lw):
+   ? Insert 1 NOP before using loaded data
+
+3. After branch/jump:
+   ? Insert 2 NOPs in delay slots
+
+4. After store (sw):
+   ? No NOPs needed (doesn't write register)
+
+5. After immediate instructions (ori, addi, etc):
+   ? Insert 2 NOPs before using result
+
+================================================================================
+HOW TO USE THIS IN VIVADO
+================================================================================
+
+1. Add all new files to Vivado project:
+   - pipeline_registers.vhd (NEW)
+   - datapath_pipelined.vhd (NEW)
+   - processor_top_pipelined.vhd (REPLACES processor_top.vhd)
+
+2. Update memory.vhd:
+   - Replace initialization code with the machine code above
+   - Keep the same entity/architecture structure
+
+3. Keep all other files unchanged:
+   - alu.vhd ?
+   - alu_control.vhd ?
+   - register_file.vhd ?
+   - control_unit.vhd ?
+   - processor_pkg.vhd ?
+
+4. Update testbench if needed to check pipeline stages
+
+5. Synthesize and test!
+
+================================================================================
+VERIFICATION CHECKLIST
+================================================================================
+
+? All 3 custom instructions (ABS, MIN, MAX) work in pipeline
+? NOPs prevent data hazards
+? Branches work with delay slots
+? Memory operations work correctly
+? Register file reads/writes happen in correct stages
+? 5 instructions execute simultaneously in different stages
+? No forwarding needed (NOPs handle everything!)
+
+================================================================================
