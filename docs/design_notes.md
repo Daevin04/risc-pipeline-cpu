@@ -1,4 +1,4 @@
-# Lessons Learned
+# Design Notes
 
 ## Design Decisions
 
@@ -56,7 +56,7 @@ The ID/EX register carries more signals than any other pipeline register because
 
 ---
 
-## What I Would Do Differently
+## Retrospective
 
 1. **Resolve branches earlier.** Moving branch resolution to the EX stage (compare register values in EX instead of checking the ALU zero flag from EX in MEM) would reduce the branch penalty from 3 to 2 cycles. Resolving in ID (with early comparison hardware) would bring it to 1.
 

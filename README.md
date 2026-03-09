@@ -143,7 +143,7 @@ The integration testbench asserts expected register values at specific cycle cou
 └── docs/
     ├── architecture.md                Detailed microarchitecture reference
     ├── verification.md                Simulation methodology and results
-    └── lessons_learned.md             Design decisions, bugs encountered, and insights
+    └── design_notes.md                Design decisions, bugs encountered, and retrospective
 ```
 
 ---
@@ -204,14 +204,14 @@ The processor runs at 2 Hz by default (100 MHz divided by 50,000,000), making ea
 
 ---
 
-## What I Learned
+## Design Rationale
 
 - **Pipeline hazard taxonomy is precise:** Data hazards, control hazards, and structural hazards each require distinct solutions. Forwarding eliminates most data hazards without stalling; load-use is the one case that requires a stall because the value is not available until after the MEM stage.
 - **Moving computation earlier reduces penalty:** Resolving jumps in the ID stage instead of MEM saves two cycles per jump. The same principle (move resolution earlier) applies broadly to pipelined design.
 - **VHDL process sensitivity lists matter:** Several bugs were caused by signals missing from combinational process sensitivity lists, producing correct simulation but potentially incorrect synthesis behavior.
 - **Hazard detection interacts with flushing in subtle ways:** Getting the stall/flush priority correct (stall takes priority over flush on the same cycle) required careful reasoning about what happens when a load is immediately followed by a branch.
 
-See `docs/lessons_learned.md` for a complete account of design decisions and bugs encountered.
+See `docs/design_notes.md` for a complete account of design decisions and bugs encountered.
 
 ---
 
