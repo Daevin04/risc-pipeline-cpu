@@ -4,6 +4,10 @@ A complete 5-stage pipelined processor implemented in VHDL, synthesized and impl
 
 ---
 
+[Waveform.pdf](https://github.com/user-attachments/files/25846493/Waveform.pdf)
+
+---
+
 ## Overview
 
 This project implements a custom 16-bit RISC processor with a 5-stage pipeline (IF → ID → EX → MEM → WB). The processor executes a custom ISA with 20 instructions, handles all three classes of pipeline hazards, and runs visibly on an FPGA at a human-observable clock rate with 7-segment PC display and single-step debugging.
