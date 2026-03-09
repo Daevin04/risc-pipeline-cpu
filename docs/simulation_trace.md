@@ -4,6 +4,94 @@ Generated from Vivado XSIM behavioral simulation. Clock period: 10 ns. Reset rel
 
 ---
 
+## Quick Reference — All Instructions
+
+Scan this table to instantly find any instruction: its fetch address, what it does, final result, and when the result commits to the register file. "Commit cycle" is when `WB_rw=1` and `wbdat` holds the final value.
+
+### BONUS Section — Custom Instructions (0x0000–0x000E)
+
+| PC (fetch) | Hex | Instruction | Computes | Result | Dest | Commit cycle |
+|------------|-----|-------------|----------|--------|------|-------------|
+| 0x0000 | 40FE | `ORI $v2, $zero, -2` | 0 \| sign-ext(-2) | **0xFFFE** | R3 | cyc 4 |
+| 0x0002 | C690 | `ABS $v1, $v2` | \|0xFFFE\| | **0x0002** | R2 | cyc 5 |
+| 0x0004 | 40C5 | `ORI $v2, $zero, 5` | 0 \| 5 | **0x0005** | R3 | cyc 6 |
+| 0x0006 | 410A | `ORI $v3, $zero, 10` | 0 \| 10 | **0x000A** | R4 | cyc 7 |
+| 0x0008 | D738 | `MIN $a1, $v2, $v3` | min(5, 10) | **0x0005** | R7 | cyc 8 |
+| 0x000A | E730 | `MAX $a0, $v2, $v3` | max(5, 10) | **0x000A** | R6 | cyc 9 |
+| 0x000C | A01C | `JUMP 0x0038` | PC ← 0x0038 | — | — | cyc 8 (ID-stage) |
+| 0x000E | 0000 | `NOP` (jump delay slot) | — | — | — | — |
+
+> After the JUMP commits, the pipeline drains: cycles 8–11 execute the stale-fetch NOPs while the JUMP redirect takes effect. Active instructions resume at 0x0038 from cycle 11 onward.
+
+---
+
+### Initialization Section — Build Working Registers (0x0038–0x004C)
+
+| PC (fetch) | Hex | Instruction | Computes | Result | Dest | Commit cycle |
+|------------|-----|-------------|----------|--------|------|-------------|
+| 0x0038 | B244 | `LI $v0, 4` | 4 | **0x0004** | R1 | cyc 15 |
+| 0x003A | F244 | `SLL $v0, $v0, 4` | 4 << 4 | **0x0040** | R1 | cyc 16 |
+| 0x003C | B481 | `LI $v1, 1` | 1 | **0x0001** | R2 | cyc 17 |
+| 0x003E | F48C | `SLL $v1, $v1, 12` | 1 << 12 | **0x1000** | R2 | cyc 18 |
+| 0x0040 | 2490 | `ADDI $v1, $v1, 16` | 0x1000 + 16 | **0x1010** | R2 | cyc 19 |
+| 0x0042 | B6CF | `LI $v2, 15` | 15 | **0x000F** | R3 | cyc 20 |
+| 0x0044 | B90F | `LI $v3, 15` | 15 | **0x000F** | R4 | cyc 21 |
+| 0x0046 | F904 | `SLL $v3, $v3, 4` | 15 << 4 | **0x00F0** | R4 | cyc 22 |
+| 0x0048 | BD82 | `LI $a0, 2` | 2 | **0x0002** | R6 | cyc 23 |
+| 0x004A | FD88 | `SLL $a0, $a0, 8` | 2 << 8 | **0x0200** | R6 | cyc 24 |
+| 0x004C | BFC5 | `LI $a1, 5` | 5 | **0x0005** | R7 | cyc 25 |
+
+> Every result here is forwarded to the next instruction via the EX→EX bypass — zero NOP overhead, zero register-file stalls.
+
+---
+
+### Loop Body — Per-Iteration Breakdown (0x004E–0x0062, 5 iterations)
+
+Each pass through the loop executes these 8 instructions. The load-use stall between LW and SW is handled entirely by hardware — no NOP in the source.
+
+| PC | Instruction | What it does | Iter 1 result | Iter 2 | Iter 3 | Iter 4 | Iter 5 |
+|----|-------------|--------------|---------------|--------|--------|--------|--------|
+| 0x004E | `SUB $t0,$t0,$t0` | Zero out $t0 | R5 = 0x0000 | same | same | same | same |
+| 0x0050 | `BEQ $a1,$t0, 27` | Branch if $a1==0 | not taken | not taken | not taken | not taken | **TAKEN** |
+| 0x0051–56 | `NOP × 3` | Branch delay slots | — | — | — | — | — |
+| 0x0058 | `SUBI $a1,$a1,1` | Decrement counter | R7: 5→**4** | 4→**3** | 3→**2** | 2→**1** | 1→**0** |
+| 0x005A | `LW $t0, 0($a0)` | Load from Mem[$a0] | $t0=**0x0101** | **0x0110** | **0x0011** | **0x00F0** | **0x00FF** |
+| 0x005C | `SW $t0, 0($a0)` | Store $t0→Mem[$a0] | *(HW stalls 1 cyc)* | same | same | same | same |
+| 0x005E | `ADDI $a0,$a0,2` | Advance pointer | R6: 0x200→**0x202** | →**0x204** | →**0x206** | →**0x208** | →**0x20A** |
+| 0x0060 | `JUMP 0x004E` | Back to loop top | — | — | — | — | — |
+| 0x0062 | `NOP` | Jump delay slot | — | — | — | — | — |
+
+> The LW→SW pair on every iteration triggers the hazard detection unit: PC and IF/ID freeze for one cycle, a bubble is inserted into ID/EX, then SW's ForwardB mux (select=01) grabs the loaded value from the MEM/WB stage.
+
+**BEQ taken on iteration 5** (cycle ≈ 82, t ≈ 846 ns): $a1 decrements to 0, the SUB at 0x004E clears $t0 to 0, and BEQ sees $a1 == $t0. The processor flushes the three NOPs that followed and redirects to the halt loop.
+
+---
+
+### Final State After Program Completion
+
+| Register | Final value | Set by |
+|----------|-------------|--------|
+| R0 $zero | 0x0000 | always zero |
+| R1 $v0 | **0x0040** | SLL at 0x003A |
+| R2 $v1 | **0x1010** | ADDI at 0x0040 |
+| R3 $v2 | **0x000F** | LI at 0x0042 |
+| R4 $v3 | **0x00F0** | SLL at 0x0046 |
+| R5 $t0 | **0x00FF** | LW at 0x005A (iter 5) |
+| R6 $a0 | **0x020A** | ADDI at 0x005E (iter 5) |
+| R7 $a1 | **0x0000** | SUBI at 0x0058 (iter 5) |
+
+| Memory address | Final value | Note |
+|----------------|-------------|------|
+| 0x0200 (mem[256]) | 0x0101 | loaded and stored back, iter 1 |
+| 0x0202 (mem[257]) | 0x0110 | iter 2 |
+| 0x0204 (mem[258]) | 0x0011 | iter 3 |
+| 0x0206 (mem[259]) | 0x00F0 | iter 4 |
+| 0x0208 (mem[260]) | 0x00FF | iter 5 |
+
+> Note: XSIM may show 0x0000 for memory after `restart` because the reset initialization signal does not re-fire. The correct values are visible in the `wbdat` column of the cycle-by-cycle dump during each LW commit.
+
+---
+
 ## Column Reference
 
 ```
